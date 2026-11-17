@@ -1,0 +1,23 @@
+{
+    "requires": {
+        "cockpit": "175"
+    },
+    "tools": {
+        "index": {
+            "label": "Tuning",
+            "order": 100,
+            "keywords": [
+                {
+                    "matches": [
+                        "sysctl",
+                        "swap",
+                        "zram",
+                        "limits",
+                        "memory",
+                        "tuning"
+                    ]
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title translate="yes">Tuning</title>
+    <meta charset="utf-8" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script src="theme.js"></script>
+
+    <link href="vendor/patternfly/patternfly.min.css" type="text/css" rel="stylesheet" />
+    <link href="cockpit-glue.css" type="text/css" rel="stylesheet" />
+    <link href="index.css" type="text/css" rel="stylesheet" />
+</head>
+
+<body class="pf-v6-m-tabular-nums">
+    <div class="ct-page-fill" id="app">
+        <div class="pf-v6-c-page no-masthead-sidebar">
+            <div class="pf-v6-c-page__main-container">
+                <nav id="app-menu" class="app-menubar"></nav>
+
+                <main class="pf-v6-c-page__main" tabindex="-1">
+
+                    <section class="pf-v6-c-page__main-section">
+                        <div class="pf-v6-c-card">
+                            <div class="pf-v6-c-card__header">
+                                <div class="pf-v6-c-card__header-main">
+                                    <div class="pf-v6-c-card__title">
+                                        <h1 class="pf-v6-c-card__title-text pf-v6-c-title pf-m-2xl" translate="yes">Tuning</h1>
+                                    </div>
+                                    <p class="app-muted" translate="yes">Kernel parameters, service resource limits, swap and zram, with a live view of whether zram is actually used.</p>
+                                </div>
+                            </div>
+                            <hr class="pf-v6-c-divider" />
+                            <div class="pf-v6-c-card__body">
+
+                                <div id="pane-overview" class="app-pane" hidden>
+                                    <div class="app-block">
+                                        <div class="app-block__header"><h2 class="app-block__title" translate="yes">Configuration</h2></div>
+                                        <div id="overview-stats"><p class="app-muted" translate="yes">Loading...</p></div>
+                                    </div>
+                                    <div class="app-block">
+                                        <div class="app-block__header"><h2 class="app-block__title" translate="yes">Is Zram Leveraged?</h2></div>
+                                        <div id="ins-alert"></div>
+                                        <p class="app-muted" id="ins-updated"></p>
+                                        <div id="ins-checklist"></div>
+                                        <p class="app-muted pf-v6-u-mt-md" translate="yes">Thresholds are heuristics and depend on the workload. Dismiss any rule that does not apply to you.</p>
+                                    </div>
+                                    <div class="app-block">
+                                        <div class="app-block__header"><h2 class="app-block__title" translate="yes">Memory</h2></div>
+                                        <div id="ins-bars"></div>
+                                    </div>
+                                    <div class="app-block">
+                                <div class="app-block__header"><h2 class="app-block__title" translate="yes">Swap Devices</h2></div>
+                                <div id="memory-alert"></div>
+                                <p class="app-muted"><span id="memory-updated"></span> <button class="pf-v6-c-button pf-m-link pf-m-inline" type="button" id="memory-refresh" translate="yes">Refresh</button></p>
+                                <div id="memory-table"></div>
+                                <p class="app-muted pf-v6-u-mt-md" translate="yes">zram devices are configured in the ZRAM tab.</p>
+                            </div>
+                            <div class="app-block">
+                                <div class="app-block__header"><h2 class="app-block__title" translate="yes">Swappiness</h2></div>
+                                <p class="app-muted pf-v6-u-mb-md" translate="yes">0 avoids swapping, 60 is the usual default, 100 or more favours swap over dropping file cache (useful with zram).</p>
+                                <div class="app-demo-row">
+                                    <input type="range" id="memory-swappiness" min="0" max="200" step="1" aria-label="vm.swappiness" />
+                                    <strong id="memory-swappiness-value"></strong>
+                                    <button class="pf-v6-c-button pf-m-primary" type="button" id="memory-apply" translate="yes">Try Live</button>
+                                </div>
+                            </div>
+                            <div class="app-block">
+                                <div class="app-block__header"><h2 class="app-block__title" translate="yes">Swap Entries in /etc/fstab</h2></div>
+                                <div id="memory-fstab"></div>
+                            </div>
+                                    <div class="app-block">
+                                        <div class="app-block__header"><h2 class="app-block__title" translate="yes">Zram Efficiency</h2></div>
+                                        <div id="ins-efficiency"></div>
+                                    </div>
+                                    <div class="app-block">
+                                        <div class="app-block__header"><h2 class="app-block__title" translate="yes">Zram Stress Test</h2></div>
+                                        <p class="app-muted pf-v6-u-mb-md" translate="yes">Fills a temporary scratch zram device so you can watch compression and the charts. RAM use is hard-capped, your real swap is untouched, and the device is removed afterwards. It does not force real swapping, so swap in/out charts will not move. Defaults are conservative.</p>
+                                        <div class="pf-v6-c-alert pf-m-inline pf-m-warning pf-v6-u-mb-md">
+                                            <div class="pf-v6-c-alert__title"><span class="pf-v6-screen-reader">Warning: </span><span translate="yes">Improperly configured options (high RAM cap, large fills of incompressible data, very short write durations) can freeze the whole system and require a hardware reboot.</span></div>
+                                        </div>
+                                        <div id="stress-alert"></div>
+                                        <div id="stress-form"></div>
+                                        <div class="app-demo-row pf-v6-u-mt-md">
+                                            <button class="pf-v6-c-button pf-m-primary" type="button" id="stress-start" translate="yes">Start Stress Test</button>
+                                            <button class="pf-v6-c-button pf-m-danger" type="button" id="stress-stop" hidden translate="yes">Stop</button>
+                                            <button class="pf-v6-c-button pf-m-link" type="button" id="stress-reset" translate="yes">Reset to Defaults</button>
+                                        </div>
+                                        <p class="app-muted" id="stress-status" aria-live="polite"></p>
+                                    </div>
+                                    <div class="app-block">
+                                        <div class="app-block__header"><h2 class="app-block__title" translate="yes">Last 10 Minutes</h2></div>
+                                        <div class="ins-grid-charts">
+                                            <div id="ins-chart-zram"></div>
+                                            <div id="ins-chart-swap"></div>
+                                            <div id="ins-chart-psi"></div>
+                                            <div id="ins-chart-major"></div>
+                                            <div id="ins-chart-avail"></div>
+                                        </div>
+                                    </div>
+                                    <div class="app-block">
+                                        <div class="app-block__header"><h2 class="app-block__title" translate="yes">Top Swapped Processes</h2></div>
+                                        <div id="ins-proc-alert"></div>
+                                        <p class="app-muted"><span id="ins-proc-updated"></span> <button class="pf-v6-c-button pf-m-link pf-m-inline" type="button" id="ins-proc-refresh" translate="yes">Refresh</button></p>
+                                        <div id="ins-proc-table"></div>
+                                    </div>
+                                
+                                </div>
+
+                                <div id="pane-kernel" class="app-pane" hidden>
+                                    <div class="app-block">
+                                        <div class="app-block__header"><h2 class="app-block__title" translate="yes">Kernel Parameters</h2></div>
+                                        <p class="app-muted pf-v6-u-mb-md" translate="yes">Changes are tried live first, then persisted to /etc/sysctl.d/90-crewpit.conf only after you confirm. Files written by others are shown but never modified.</p>
+                                        <div id="kernel-alert"></div>
+                                        <div class="app-demo-row">
+                                            <span class="pf-v6-c-form-control"><input type="search" id="kernel-search" placeholder="Search keys and descriptions" aria-label="Search kernel parameters" /></span>
+                                            <label class="pf-v6-c-check"><input class="pf-v6-c-check__input" type="checkbox" id="kernel-curated" checked /><span class="pf-v6-c-check__label" translate="yes">Curated Keys Only</span></label>
+                                            <button class="pf-v6-c-button pf-m-secondary pf-m-small" type="button" id="kernel-refresh" translate="yes">Refresh</button>
+                                        </div>
+                                        <p class="app-muted"><span id="kernel-count"></span> <span id="kernel-updated"></span></p>
+                                        <div id="kernel-table"></div>
+                                    </div>
+                                </div>
+
+                                <div id="pane-services" class="app-pane" hidden>
+                                    <div class="app-block">
+                                        <div class="app-block__header"><h2 class="app-block__title" translate="yes">Resource Limits</h2></div>
+                                        <p class="app-muted pf-v6-u-mb-md" translate="yes">Limits go into a systemd drop-in, crewpit-limits.conf, next to the unit. Slices such as user.slice work too.</p>
+                                        <div class="pf-v6-c-alert pf-m-inline pf-m-info pf-v6-u-mb-md">
+                                            <div class="pf-v6-c-alert__title"><span class="pf-v6-screen-reader">Note: </span><span translate="yes">limits.conf only affects PAM login sessions, not services. Use the fields below for services.</span></div>
+                                        </div>
+                                        <div id="services-alert"></div>
+                                        <div class="app-demo-row">
+                                            <span class="pf-v6-c-form-control"><input type="text" id="services-unit" placeholder="nginx.service or user.slice" aria-label="Unit name" autocomplete="off" /></span>
+                                            <button class="pf-v6-c-button pf-m-primary" type="button" id="services-load" translate="yes">Load</button>
+                                        </div>
+                                    </div>
+                                    <div class="app-block">
+                                        <div class="app-block__header"><h2 class="app-block__title" translate="yes">Live Values</h2></div>
+                                        <div id="services-live"><p class="app-muted" translate="yes">Pick a unit above.</p></div>
+                                    </div>
+                                    <div class="app-block">
+                                        <div id="services-form"></div>
+                                    </div>
+                                </div>
+
+                                <div id="pane-zram" class="app-pane" hidden>
+                                    <div class="app-block">
+                                        <div class="app-block__header"><h2 class="app-block__title" translate="yes">Devices</h2></div>
+                                        <div id="zram-alert"></div>
+                                        <div id="zram-status"></div>
+                                        <p class="app-muted"><button class="pf-v6-c-button pf-m-link pf-m-inline" type="button" id="zram-refresh" translate="yes">Refresh</button></p>
+                                        <div id="zram-devices"></div>
+                                    </div>
+                                    <div class="app-block">
+                                        <div class="app-block__header"><h2 class="app-block__title" translate="yes">Configuration</h2></div>
+                                        <p class="app-muted pf-v6-u-mb-md" translate="yes">Written to /etc/systemd/zram-generator.conf.d/90-crewpit.conf. Other zram-generator files are never modified.</p>
+                                        <div id="zram-device-host" class="pf-v6-u-mb-md"></div>
+                                        <div id="zram-form"></div>
+                                    </div>
+                                </div>
+
+                                <div id="pane-presets" class="app-pane" hidden>
+                                    <p class="app-muted pf-v6-u-mb-md" translate="yes">Each preset shows a diff first and goes through the same try-live and keep flow as the Kernel tab.</p>
+                                    <div id="presets-list"></div>
+                                </div>
+
+                            </div>
+                            <hr class="pf-v6-c-divider" />
+                            <div class="pf-v6-c-card__footer app-footer">
+                                <span class="app-muted">Tuning v1.0</span>
+                            </div>
+                        </div>
+                    </section>
+
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Served by cockpit-ws itself (base1 package), not shipped in this package. -->
+    <script src="../base1/cockpit.js"></script>
+    <script src="functions.js"></script>
+    <script src="lib.js"></script>
+    <script src="kernel.js"></script>
+    <script src="services.js"></script>
+    <script src="memory.js"></script>
+    <script src="zram.js"></script>
+    <script src="insights.js"></script>
+    <script src="presets.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>
